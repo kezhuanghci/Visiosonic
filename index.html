@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visiosonic · See with your ears</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Animated aurora background -->
+  <div class="aurora">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <span class="blob b3"></span>
+    <span class="blob b4"></span>
+  </div>
+  <canvas id="particles" class="particles"></canvas>
+
+  <main class="shell">
+    <header class="hero">
+      <div class="badge">
+        <span class="dot"></span> synesthesia engine
+      </div>
+      <h1 class="title">Visio<span class="grad">sonic</span></h1>
+      <p class="subtitle">
+        Upload an image and <em>hear</em> its colors. Every hue becomes a voice,
+        every shade a pitch — light sings high, shadow hums low.
+      </p>
+    </header>
+
+    <!-- STAGE 1: Drop zone -->
+    <section id="dropStage" class="stage">
+      <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload an image">
+        <input type="file" id="fileInput" accept="image/*" hidden />
+        <div class="dz-inner">
+          <div class="dz-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 16V4m0 0L7 9m5-5 5 5" />
+              <path d="M20 16.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2.5" />
+            </svg>
+          </div>
+          <p class="dz-title">Drop a photo here</p>
+          <p class="dz-sub">or <span class="dz-browse">browse your files</span> · JPG, PNG, WEBP</p>
+        </div>
+        <div class="dz-ring"></div>
+      </div>
+
+      <div class="samples">
+        <span class="samples-label">no photo? try a texture</span>
+        <div class="sample-swatches" id="sampleSwatches">
+          <button class="swatch" data-gen="sunset" style="--a:#ff6b6b;--b:#feca57;--c:#ff9ff3">sunset</button>
+          <button class="swatch" data-gen="ocean" style="--a:#0abde3;--b:#48dbfb;--c:#1dd1a1">ocean</button>
+          <button class="swatch" data-gen="forest" style="--a:#10ac84;--b:#1dd1a1;--c:#feca57">forest</button>
+          <button class="swatch" data-gen="nebula" style="--a:#5f27cd;--b:#ee5253;--c:#48dbfb">nebula</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STAGE 2: Studio -->
+    <section id="studio" class="studio hidden">
+      <button id="backBtn" class="back-btn" title="Back to upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        <span>Back</span>
+      </button>
+
+      <div class="studio-grid">
+        <!-- Left: the image + playhead -->
+        <div class="canvas-card">
+          <div class="canvas-wrap">
+            <canvas id="imageCanvas"></canvas>
+            <canvas id="overlayCanvas" class="overlay"></canvas>
+            <div id="scanline" class="scanline hidden"></div>
+          </div>
+          <div class="palette-strip" id="paletteStrip"></div>
+        </div>
+
+        <!-- Right: controls -->
+        <aside class="controls">
+          <div class="ctrl-head">
+            <h2>Composition</h2>
+          </div>
+
+          <div class="field">
+            <label>Instrument</label>
+            <div class="select-wrap">
+              <select id="instrument">
+                <option value="piano" selected>🎹 Grand Piano</option>
+                <option value="epiano">🎵 Electric Piano</option>
+                <option value="musicbox">🔔 Music Box</option>
+                <option value="marimba">🪵 Marimba</option>
+                <option value="guitar">🎸 Guitar</option>
+                <option value="strings">🎻 Strings</option>
+                <option value="flute">🎶 Flute</option>
+                <option value="synth">🌫️ Synth Pad</option>
+                <option value="orchestra">🎼 Orchestra (ensemble)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Duration <span class="val" id="durVal">14s</span></label>
+            <input type="range" id="duration" min="6" max="30" value="14" step="1" />
+          </div>
+
+          <div class="field">
+            <label>Mood</label>
+            <div class="segmented" id="scaleSeg">
+              <button data-scale="pentatonic" class="active">Dreamy</button>
+              <button data-scale="major">Bright</button>
+              <button data-scale="minor">Melancholy</button>
+              <button data-scale="lydian">Ethereal</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Tempo <span class="val" id="stepsVal">medium</span></label>
+            <input type="range" id="steps" min="16" max="64" value="36" step="4" />
+          </div>
+
+          <div class="field toggles">
+            <label class="switch">
+              <input type="checkbox" id="reverbToggle" checked />
+              <span class="slider"></span> Reverb space
+            </label>
+          </div>
+
+          <button id="generateBtn" class="primary-btn">
+            <span class="btn-label">Generate sound</span>
+            <span class="btn-glow"></span>
+          </button>
+
+          <!-- Progress -->
+          <div id="progressWrap" class="progress-wrap hidden">
+            <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+            <span id="progressLabel" class="progress-label">Listening to colors…</span>
+          </div>
+
+          <!-- Player -->
+          <div id="player" class="player hidden">
+            <div class="viz-wrap"><canvas id="vizCanvas"></canvas></div>
+            <div class="transport">
+              <button id="playBtn" class="round-btn play" aria-label="Play">
+                <svg class="ic-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                <svg class="ic-pause hidden" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+              </button>
+              <div class="track">
+                <div class="time" id="curTime">0:00</div>
+                <div class="seek"><div id="seekFill" class="seek-fill"></div></div>
+                <div class="time" id="totTime">0:00</div>
+              </div>
+              <button id="downloadBtn" class="round-btn dl" aria-label="Download">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span>Visiosonic — an experiment in cross-sensory art. Built with the Web Audio API.</span>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
